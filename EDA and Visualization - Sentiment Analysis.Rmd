@@ -36,7 +36,7 @@ options(scipen = 999)
 con <- db_connect(PostgreSQL(), host = Sys.getenv("ENDPOINT"),  port = Sys.getenv("PORT") , dbname = Sys.getenv("DB_NAME"), user = Sys.getenv("USERNAME"), password = Sys.getenv("PASSWORD"))
 ```
 
-This is a followup on the NLP sentiment analysis on the titles for Kurzgesagt YouTube videos. In order to see how successful that sentiment analysis was, I will classify the titles manually and check to see how frequently the model agreed with my classifications.
+This is a followup on the NLP sentiment analysis on the titles for Kurzgesagt YouTube videos. In order to see how successful that sentiment analysis was, I will classify the titles manually and check to see how frequently the model agreed with my classifications. This data is clean, but I will add my subjective classifications as a new variable and I will ensure the upload date is classified as "date" data. 
 
 ```{r}
 video_data <- collect(tbl(con, "video_data")) #collecting data from database to my system
@@ -116,10 +116,41 @@ video_data %>%
   formattable()
 ```
 
-The video with the most views (by almost double the next highest) is an explanatory video which is discussing Coronavirus and mthods of mitigation. Interestingly, the video with the most likes and comments was not the video that had the most views (it had the 9th most). This video is called "The Egg - A Short Story", and is a non-scientific, hopeful and philosophical video that is not typical for this channel. This suggests that occasional deviations from your channel's main focus can still drive very high levels of positive engagement.
+The video with the most views (by almost double the next highest) is an explanatory video which is discussing COVID and methods of mitigation. Interestingly, the video with the most likes and comments was not the video that had the most views (it had the 9th most). This video is called "The Egg - A Short Story", and is a non-scientific, hopeful and philosophical video that is not typical for this channel. This suggests that occasional deviations from your channel's main focus can still drive very high levels of positive engagement.
 
-Some data visualization
+I'm curious if there is a difference in mean comments, likes, and views for the different titles. So let's investigate that:
 
+```{r, warning = FALSE}
+video_data %>%
+  select(comment_count,like_count,view_count, my_ratings) %>%
+  group_by(my_ratings) %>%
+  rename(Sentiment = my_ratings) %>%
+  summarize(`Mean Comments` = mean(comment_count),`Mean Likes` = mean(like_count), `Mean Views` = mean(view_count))%>%
+  formattable
+```
+It appears that there is on average more engagement in the form of comments and likes for videos with either positive or negative titles, as opposed to neutral titles. Notably, the mean views were much higher (~19%) for videos with negative titles. So while engagement is similar between positive and negative titles, this could suggest that negative titles draw in more views overall.
+
+
+In order to make sure this difference in mean views is statistically significant, a t-test between the positive and negative titles would likely be sufficient. A slightly more correct way to check though would be to perform an ANOVA along with a post-hoc analysis. 
+
+```{r}
+
+#ANOVA with Tukey post-hoc
+views_anova <- aov(view_count~my_ratings, data = video_data)
+TukeyHSD(views_anova)
+
+#T test approach, investigating the difference between negative and positive title sentiment
+ttest_data <- video_data%>%
+  select(view_count, my_ratings)%>%
+  filter(my_ratings != "NEUTRAL")
+t.test(ttest_data$view_count~ttest_data$my_ratings)
+
+```
+
+Neither the anova or t test suggests a statistically significant difference in views between the two groups at an alpha of .05, however the t test p-value of .09 is low enough that this still warrants further investigation. A way to expand upon this would be to pull more data from additional science channels to see if this relationship becomes more apparent, which I will do in the next version of this project.
+
+
+Let's visualize the differences between different title sentiments.
 
 ```{r violin-sentiment-plots, fig.width = 12}
 ggthemr(palette = "pale", layout = "scientific")
@@ -141,7 +172,7 @@ video_data %>%
   facet_wrap(~name, scales = "free")
 ```
 
-The way to interpret this plot is that the "violin" part shows the distribution of the data (bigger bulge where there are more data points) and the boxplot shows the median (bar in the middle) and first/third quartile. Comments, likes, and views are all higher for videos with negative titles. This would suggest that a more negative title is having at least some positive effect on the amount of engagement with a video. In order to take a closer look at this, I will next look at views in isolation, this time filtering out any outliers. 
+The way to interpret this plot is that the "violin" part shows the distribution of the data (bigger bulge where there are more data points) and the boxplot shows the median (bar in the middle) and first/third quartile (region containing the middle 75% of the data). We see that engagement (likes and comments) seem to be higher for videos with positive or negative title sentiments than neutral sentiments. We also see that views are on average higher for videos with negative titles. In order to take a closer look at this, I will next look at views in isolation, this time filtering out any outliers. 
 
 
 ```{r views-violin-plot}
@@ -163,7 +194,7 @@ views_by_sentiment
 
 ```
 
-From these visualizations it appears that a more negative title yields more views on average. Both median and mean views are higher when the title is negative. Further analysis in th
+These visualizations provide some support for the idea that more negative titles result in more video views on average. Both median and mean views are higher when the title is negative.
 
 
 Next, it would be nice to examine if there has been a change in views, comments, or likes throughout the history of the channel. 
@@ -189,7 +220,7 @@ timeseries <- video_data %>%
 timeseries
 ```
 
-Views have been pretty constant through time, but likes and comments have increased notably over time. This might give some insight into how viewers are engaging with the videos - with new viewers liking and commenting on newer videos, and then more passively engaging with older content as they go back through the back catalogue of videos. 
+Views have been pretty constant through time, but likes and comments have increased notably over time. This might give some insight into how viewers are engaging with the videos - with new viewers liking and commenting on newer videos, and then more passively engaging with older content as they go back through the back catalog of videos. 
 
 
 
@@ -202,8 +233,30 @@ If you would like an interactive version of this plot, simply uncomment and run 
 
 
 
+```{r}
+video_data %>%
+  select(view_count, my_ratings) %>%
+  group_by(my_ratings)%>%
+  summarize(mean_views = mean(view_count))%>%
+  formattable
+
+video_data %>%
+  select(comment_count, my_ratings) %>%
+  group_by(my_ratings)%>%
+  summarize(mean_comments = mean(comment_count))
+```
+
+
+
+
+
+
+
+
 
 Abandoned plots---------------------------------
+
+
 
 ```{r}
 #column plot of mean likes, views, and comments for different title sentiments (model)
