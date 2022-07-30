@@ -42,7 +42,7 @@ This is a followup on the NLP sentiment analysis on the titles for Kurzgesagt Yo
 video_data <- collect(tbl(con, "video_data")) #collecting data from database to my system
 
 #my sentiment ratings for the video titles
-my_ratings <- c(-1, 1, 0, -1, 1, 0, -1, -1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, -1,-1, -1, -1, 0, -1, -1, -1, 1, -1, 0, -1, 0, 1, -1, 0, 1, 1, 0, 0, 0, -1, 0, 1, 0, 1, 0, -1, 0, -1, 1, 1, 1, 0, -1, -1, 0, 1, -1, -1, -1, -1, 0, -1, -1, -1, 1, 0, -1, 1, 0, 1, 1, -1, 0, 1, -1, 1, 0, -1, -1, 0, -1, -1, 1, 0, 0, -1, -1, -1, 1, 1, 1, 1, 0, -1, 0, -1, -1, -1, 1, 0, -1, 0, 0, 0, -1, -1, 1, -1, 1, -1, 0, 1, -1, 1, 1, 1, -1, 1, -1, -1, -1, 1, 0, 0, -1, 1, 0, -1, -1, 1, 0, 1, -1, 0, 0, -1, 0, 1, 0, -1, 0, 0, 0,-1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, -1, 1, 1) %>% as.character
+my_ratings <- c(-1, 1, 0, -1, 1, 0, -1, -1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, -1,-1, -1, -1, 0, -1, -1, -1, 1, -1, 0, -1, 0, 1, -1, 0, 1, 1, 0, 0, 0, -1, 0, 1, 0, 1, 0, -1, 0, -1, 1, 1, 1, 0, -1, -1, 0, 1, -1, -1, -1, -1, 0, -1, -1, -1, 1, 0, -1, 1, 0, 1, 1, -1, 0, 1, -1, 1, 0, -1, -1, 0, -1, -1, 1, 0, 0, -1, -1, -1, 1, 1, 1, 1, 0, -1, 0, -1, -1, -1, 1, 0, -1, 0, 0, 0, -1, -1, 1, -1, 1, -1, 0, 1, -1, 1, 1, 1, -1, 1, -1, -1, -1, 1, 0, 0, -1, 1, 0, -1, -1, 1, 0, 1, -1, 0, 0, -1, 0, 1, 0, -1, 0, 0, 0,-1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, -1, 1, 1) %>% as.character #making character for easy replacement
 
 my_ratings <- my_ratings %>%
   replace( my_ratings == "-1", "NEGATIVE") %>%
@@ -134,17 +134,15 @@ It appears that there is on average more engagement in the form of comments and 
 In order to make sure this difference in mean views is statistically significant, a t-test between the positive and negative titles would likely be sufficient. A slightly more correct way to check though would be to perform an ANOVA along with a post-hoc analysis. 
 
 ```{r}
-
 #ANOVA with Tukey post-hoc
 views_anova <- aov(view_count~my_ratings, data = video_data)
 TukeyHSD(views_anova)
 
-#T test approach, investigating the difference between negative and positive title sentiment
+#T test approach, investigating the difference in views between negative and positive title sentiment
 ttest_data <- video_data%>%
   select(view_count, my_ratings)%>%
   filter(my_ratings != "NEUTRAL")
 t.test(ttest_data$view_count~ttest_data$my_ratings)
-
 ```
 
 Neither the anova or t test suggests a statistically significant difference in views between the two groups at an alpha of .05, however the t test p-value of .09 is low enough that this still warrants further investigation. A way to expand upon this would be to pull more data from additional science channels to see if this relationship becomes more apparent, which I will do in the next version of this project.
@@ -178,7 +176,7 @@ The way to interpret this plot is that the "violin" part shows the distribution 
 ```{r views-violin-plot}
 ggthemr(palette = "pale", layout = "scientific")
 #box and violin plot of just views with outliers removed
-views_by_sentiment <- video_data %>%
+video_data %>%
   select(view_count, my_ratings) %>%
   rename(Views = view_count)%>%
   filter(Views <= 2.2e7) %>%
@@ -189,9 +187,6 @@ views_by_sentiment <- video_data %>%
   theme(legend.position = "none",  axis.text.x = element_text(face = "bold"), 
         axis.title = element_text(face = "bold"))+
   labs(x = "Title Sentiment", y = "Views", color = "")
-
-views_by_sentiment
-
 ```
 
 These visualizations provide some support for the idea that more negative titles result in more video views on average. Both median and mean views are higher when the title is negative.
@@ -200,7 +195,6 @@ These visualizations provide some support for the idea that more negative titles
 Next, it would be nice to examine if there has been a change in views, comments, or likes throughout the history of the channel. 
 
 ```{r timeseries, fig.width = 7, fig.height = 8}
-
 ggthemr(palette = "fresh")
 timeseries <- video_data %>%
   select(vid_title, view_count, like_count, comment_count, upload_date) %>%
@@ -218,18 +212,13 @@ timeseries <- video_data %>%
         axis.title.x = element_text(face = "bold"))
 
 timeseries
-```
-
-Views have been pretty constant through time, but likes and comments have increased notably over time. This might give some insight into how viewers are engaging with the videos - with new viewers liking and commenting on newer videos, and then more passively engaging with older content as they go back through the back catalog of videos. 
 
 
-
-If you would like an interactive version of this plot, simply uncomment and run the following:
-
-```{r}
-#interactive version
+#interactive version: uncomment and run if desired
 #ggplotly(timeseries)
 ```
+
+Views have been pretty constant through time, but likes and comments have increased notably over time. This might give some insight into how viewers are engaging with the videos - with new viewers liking and commenting on newer videos, and then more passively engaging with older content as they go back through the back catalog of videos.
 
 
 
