@@ -1,8 +1,8 @@
 # Portfolio
 
 #### Quick Guide
-1. For Python and some SQL coding skills [click here](https://github.com/Andrew-Castagno/Portfolio/blob/main/Youtube%20API%20Pipeline%20-%20Full%20Thoughts.ipynb)
-2. For R EDA and visualization skills [click here](https://github.com/Andrew-Castagno/Portfolio/blob/main/EDA-and-Visualization---Sentiment-Analysis.md)
+1. For Python and some SQL coding [click here](https://github.com/Andrew-Castagno/Portfolio/blob/main/Youtube%20API%20Pipeline%20-%20Full%20Thoughts.ipynb)
+2. For R EDA and visualization [click here](https://github.com/Andrew-Castagno/Portfolio/blob/main/EDA-and-Visualization---Sentiment-Analysis.md)
 3. For geospatial visualizations [click here](https://github.com/Andrew-Castagno/scholometrics/blob/main/Geospatial/Geospatial_aerosol_visualization.md)
 4. For some modeling in R [click here](https://github.com/Andrew-Castagno/scholometrics/blob/main/SMOTE%20with%20GLM/SMOTE-with-GLM.md)
 
